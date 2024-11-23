@@ -6,6 +6,17 @@ import math
 from heapq import heappush, heappop
 from collections import defaultdict
 
+QM = np.array([
+        [16, 11, 10, 16, 24, 40, 51, 61],
+        [12, 12, 14, 19, 26, 58, 60, 55],
+        [14, 13, 16, 24, 40, 57, 69, 56],
+        [14, 17, 22, 29, 51, 87, 80, 62],
+        [18, 22, 37, 56, 68, 109, 103, 77],
+        [24, 35, 55, 64, 81, 104, 113, 92],
+        [49, 64, 78, 87, 103, 121, 120, 101],
+        [72, 92, 95, 98, 112, 100, 103, 99]
+    ])
+
 # Helper Functions
 def zigzag_transform(block):
     idx = np.array([
@@ -27,11 +38,16 @@ def run_length_encode(data, huffman_table):
     for coeff in data:
         if coeff == 0:
             zero_count += 1
+            # if zero_count == 16:  
+            #     encoded_data.append((15, 0))
+            #     zero_count = 0
         else:
             huffman_code = huffman_table[coeff]
             encoded_data.append((huffman_code, zero_count))
             zero_count = 0
 
+    encoded_data.append((-1,-1))
+        
     return encoded_data
     
 def huffman_encode(symbols, frequencies, exclude_zeros=False):
@@ -50,10 +66,7 @@ def huffman_encode(symbols, frequencies, exclude_zeros=False):
         heappush(heap, [lo[0] + hi[0]] + lo[1:] + hi[1:])
     return dict(sorted(heappop(heap)[1:], key=lambda p: (len(p[1]), p)))
 
-def encode_data(data, huffman_codes):
-    return ''.join(huffman_codes[sym] for sym in data)
-
-def encoder(image_path, quality_factor, output_file):
+def encoder(image_path, quality_factor, output_file, Q=QM):
     # Load the grayscale image using PIL and convert it to numpy array
     image = Image.open(image_path).convert('L')
     image = np.array(image)
@@ -79,17 +92,6 @@ def encoder(image_path, quality_factor, output_file):
     height, width = image.shape
 
     # Define JPEG quantization matrix for grayscale (luminance)
-    Q = np.array([
-        [16, 11, 10, 16, 24, 40, 51, 61],
-        [12, 12, 14, 19, 26, 58, 60, 55],
-        [14, 13, 16, 24, 40, 57, 69, 56],
-        [14, 17, 22, 29, 51, 87, 80, 62],
-        [18, 22, 37, 56, 68, 109, 103, 77],
-        [24, 35, 55, 64, 81, 104, 113, 92],
-        [49, 64, 78, 87, 103, 121, 120, 101],
-        [72, 92, 95, 98, 112, 100, 103, 99]
-    ])
-
     Q = Q * (50 / quality_factor)
     Q[Q == 0] = 1  # Avoid division by zero
 
@@ -145,6 +147,19 @@ def encoder(image_path, quality_factor, output_file):
     print("AC Huffman Codes:")
     for symbol, code in ac_huffman_codes.items():
         print(f"{symbol}: {code}")
+        
+    # Perform Huffman encoding for DC coefficients
+    dc_encoded_data = []
+    for diff in DC_differences:
+        huffman_code = dc_huffman_codes[diff]
+        dc_encoded_data.append(huffman_code)
+        
+    # Perform RLE encoding for AC coefficients for each block
+    ac_encoded_data = []
+    for i in range(0, len(AC_coefficients), 63):
+        block_data = AC_coefficients[i:i+63]
+        encoded_block = run_length_encode(block_data, ac_huffman_codes)
+        ac_encoded_data.extend(encoded_block) 
 
     # Save metadata and encoded data to a .txt file
     with open(output_file, 'w') as f:
@@ -161,6 +176,17 @@ def encoder(image_path, quality_factor, output_file):
         f.write("AC Huffman Codes:\n")
         for symbol, code in ac_huffman_codes.items():
             f.write(f"{symbol}: {code}\n")
+            
+        # Write encoded DC data
+        f.write("Encoded DC Data:\n")
+        f.write("".join(dc_encoded_data))
+        f.write("\n")
+        
+        # Write encoded AC data
+        f.write("Encoded AC Data:\n")
+        for symbol, count in ac_encoded_data:
+            f.write(f"{symbol}:{count} ")
+        f.write("\n")
 
     print(f"Encoded data and metadata saved to {output_file}")
 
