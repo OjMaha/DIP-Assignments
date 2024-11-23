@@ -17,7 +17,7 @@ QM = np.array([
 def main():
     # Specify the input image
     input_image = 'images/kodak24.png'  # Provide the path to your input image here
-    quality_factor = 50  # JPEG quality factor
+    quality_factor = 10  # JPEG quality factor
     output_file = 'encoded_image.txt'  # File to store the encoded data
 
     # Perform encoding

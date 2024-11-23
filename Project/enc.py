@@ -143,6 +143,9 @@ def encoder(image_path, quality_factor, output_file, Q):
             # Quantize the DCT block
             quantized_block = np.round(dct_block / Q)
             compressed_image[i:i+8, j:j+8] = quantized_block
+
+            if(i == 0 and j == 0):
+                print("First patch: ", quantized_block)
             
             # Extract DC and AC coefficients
             zigzag_coeffs = zigzag_transform(quantized_block)

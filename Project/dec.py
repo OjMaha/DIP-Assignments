@@ -16,19 +16,36 @@ def decode_huffman(encoded_data, huffman_codes):
     return decoded_data
 
 def inverse_zigzag_transform(data, dims):
-    idx = [
-        0, 1, 8, 16, 9, 2, 3, 10,
-        17, 24, 32, 25, 18, 11, 4, 5,
-        12, 19, 26, 33, 40, 48, 41, 34,
-        27, 20, 13, 6, 7, 14, 21, 28,
-        35, 42, 49, 56, 57, 50, 43, 36,
-        29, 22, 15, 23, 30, 37, 44, 51,
-        58, 59, 52, 45, 38, 31, 39, 46,
-        53, 60, 61, 54, 47, 55, 62, 63,
-    ]
-    block = np.zeros(64)
+    """
+    Reconstructs a 2D block from its zigzag-transformed 1D representation.
+
+    Args:
+        data (array-like): The 1D zigzag-transformed data.
+        dims (tuple): The dimensions of the output block (e.g., (8, 8)).
+
+    Returns:
+        np.ndarray: The reconstructed 2D block.
+    """
+    # Define the zigzag index mapping for an 8x8 block
+    idx = np.array([
+        [0, 1, 5, 6, 14, 15, 27, 28],
+        [2, 4, 7, 13, 16, 26, 29, 42],
+        [3, 8, 12, 17, 25, 30, 41, 43],
+        [9, 11, 18, 24, 31, 40, 44, 53],
+        [10, 19, 23, 32, 39, 45, 52, 54],
+        [20, 22, 33, 38, 46, 51, 55, 60],
+        [21, 34, 37, 47, 50, 56, 59, 61],
+        [35, 36, 48, 49, 57, 58, 62, 63]
+    ])
+
+    # Create an empty flattened array of the appropriate size
+    block = np.zeros(dims[0] * dims[1])
+
+    # Fill the block using the zigzag indices
     for i, val in enumerate(data):
-        block[idx[i]] = val
+        block[idx.flatten()[i]] = val
+
+    # Reshape the block to the specified dimensions
     return block.reshape(dims)
 
 def run_length_decode(encoded_data):
@@ -135,6 +152,7 @@ def decoder(encoded_file, quality_factor, Q):
         
     # Decode Huffman data for DC and AC coefficients
     decoded_dc_data = decode_huffman(dc_encoded_data, dc_huffman_codes)
+
     print("Decoding DC Huffman done")
     
     AC_rle = []
@@ -183,6 +201,9 @@ def decoder(encoded_file, quality_factor, Q):
             quantized_block = inverse_zigzag_transform(zigzag_coeffs, (8, 8))
             compressed_image[i:i+8, j:j+8] = quantized_block
             patch_number += 1
+
+            if(patch_number == 1):
+                print("First patch: ", quantized_block)
 
     print("Patches regenerated")
 
