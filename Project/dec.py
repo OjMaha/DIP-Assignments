@@ -169,8 +169,6 @@ def decoder(encoded_file, quality_factor, Q):
     padded_width = original_width + pad_width
     compressed_image = np.zeros((padded_height, padded_width))
 
-    print("dc_coeffs_len:", len(DC_coefficients))
-
     assert(len(decoded_ac_data) == len(DC_coefficients))
 
     patch_number = 0   
@@ -180,7 +178,7 @@ def decoder(encoded_file, quality_factor, Q):
             dc_value = DC_coefficients[patch_number]
 
             zigzag_coeffs = [dc_value]  # Initialize with DC value
-            zigzag_coeffs.append(decoded_ac_data[patch_number])
+            zigzag_coeffs.extend(decoded_ac_data[patch_number])
 
             quantized_block = inverse_zigzag_transform(zigzag_coeffs, (8, 8))
             compressed_image[i:i+8, j:j+8] = quantized_block
