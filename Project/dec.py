@@ -3,13 +3,12 @@ from scipy.fftpack import idct
 from matplotlib import pyplot as plt
 
 def decode_huffman(encoded_data, huffman_codes):
-    reverse_codes = {v: k for k, v in huffman_codes.items()}
     decoded_data = []
     buffer = ""
     for bit in encoded_data:
         buffer += bit
-        if buffer in reverse_codes:
-            decoded_data.append(reverse_codes[buffer])
+        if buffer in huffman_codes:
+            decoded_data.append(huffman_codes[buffer])
             buffer = ""
     if buffer:
         print("Buffer: ", buffer)
@@ -55,23 +54,6 @@ def decoder(encoded_file, quality_factor):
         quality_line = f.readline().strip()
         parsed_quality = int(quality_line.split(':')[1].strip())
         assert parsed_quality == quality_factor, "Quality factor mismatch."
-
-        # Skip the descriptive header for Huffman Codes
-        # huffman_header = f.readline().strip()
-        # if huffman_header != "Huffman Codes:":
-        #     raise ValueError("Unexpected format: Expected 'Huffman Codes:' header")
-
-        # Read Huffman codes
-        # huffman_codes = {}
-        # while True:
-        #     line = f.readline().strip()
-        #     if line.startswith("Encoded Data:"):
-        #         break  # Stop at the encoded data section
-        #     symbol, code = line.split(':')
-        #     huffman_codes[code.strip()] = float(symbol.strip())
-
-        # # Read the encoded data (strip "Encoded Data:" label)
-        # encoded_data = line.split(':', 1)[1].strip()
         
         found_AC = False
         found_DC_encode = False
@@ -90,9 +72,8 @@ def decoder(encoded_file, quality_factor):
             if ':' not in line:
                 raise ValueError("Unexpected format in DC Huffman Codes section.")
             symbol, code = line.split(':', 1)  # Allow for ':' in the code
-            dc_huffman_codes[code.strip()] = float(symbol.strip())  # Use float for symbols
-
-        
+            dc_huffman_codes[symbol.strip()] = code.strip()  
+            
         if not found_AC:
             ac_huffman_header = f.readline().strip()
         else:
@@ -110,7 +91,7 @@ def decoder(encoded_file, quality_factor):
             if ':' not in line:
                 raise ValueError("Unexpected format in AC Huffman Codes section.")
             symbol, code = line.split(':', 1)  # Allow for ':' in the code
-            ac_huffman_codes[code.strip()] = float(symbol.strip())  # Use float for symbols
+            ac_huffman_codes[code.strip()] = symbol.strip()  
 
         # Read DC encoded data
         if found_DC_encode:
@@ -128,7 +109,17 @@ def decoder(encoded_file, quality_factor):
         if ac_encoded_data_header != "Encoded AC Data:":
             raise ValueError("Unexpected format: Expected 'Encoded AC Data:' header")
         
-        ac_encoded_data = f.readline().strip()  # Extract actual AC encoded data
+        ac_encoded_data = []
+        while True:
+            line = f.readline().strip()
+            if line == "":
+                break
+            if ':' not in line:
+                print("line: ", line)
+                raise ValueError("Unexpected format in AC Huffman Codes section.")
+            code, count_zero = line.split(':', 1)  # Allow for ':' in the code
+            ac_encoded_data.append((code.strip(), int(count_zero.strip()))) 
+
         # print("got AC encoded data: ", ac_encoded_data)
             
         
@@ -144,7 +135,14 @@ def decoder(encoded_file, quality_factor):
     # Decode Huffman data for DC and AC coefficients
     decoded_dc_data = decode_huffman(dc_encoded_data, dc_huffman_codes)
     print("Decoding DC Huffman done")
-    decoded_ac_data = decode_huffman(ac_encoded_data, ac_huffman_codes)
+    
+    decoded_ac_data = []
+    for (code, count_zero) in ac_encoded_data:
+        if code == "-1" and count_zero == -1:
+            decoded_ac_data.append((code, count_zero))
+        else:
+            decoded_ac_data.append((ac_huffman_codes[code], count_zero))
+            
     print("Decoding AC Huffman done")
     
    # Reconstruct DC coefficients

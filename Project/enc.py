@@ -6,17 +6,6 @@ import math
 from heapq import heappush, heappop
 from collections import defaultdict
 
-QM = np.array([
-        [16, 11, 10, 16, 24, 40, 51, 61],
-        [12, 12, 14, 19, 26, 58, 60, 55],
-        [14, 13, 16, 24, 40, 57, 69, 56],
-        [14, 17, 22, 29, 51, 87, 80, 62],
-        [18, 22, 37, 56, 68, 109, 103, 77],
-        [24, 35, 55, 64, 81, 104, 113, 92],
-        [49, 64, 78, 87, 103, 121, 120, 101],
-        [72, 92, 95, 98, 112, 100, 103, 99]
-    ])
-
 # Helper Functions
 def zigzag_transform(block):
     idx = np.array([
@@ -103,7 +92,7 @@ def huffman_encode(symbols, frequencies, exclude_zeros=False):
 
     return huffman_codes
 
-def encoder(image_path, quality_factor, output_file, Q=QM):
+def encoder(image_path, quality_factor, output_file, Q):
     # Load the grayscale image using PIL and convert it to numpy array
     image = Image.open(image_path).convert('L')
     image = np.array(image)
@@ -231,4 +220,3 @@ def encoder(image_path, quality_factor, output_file, Q=QM):
             f.write(f"{symbol}:{count}\n")
 
     print(f"Encoded data and metadata saved to {output_file}")
-
