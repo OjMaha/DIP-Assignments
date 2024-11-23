@@ -1,7 +1,7 @@
 from enc import encoder  # Ensure encoder.py is implemented and available
 from dec import decoder  # Ensure decoder.py is implemented and available
-
 import numpy as np
+import matplotlib.pyplot as plt
 
 QM = np.array([
         [16, 11, 10, 16, 24, 40, 51, 61],
@@ -17,7 +17,7 @@ QM = np.array([
 def main():
     # Specify the input image
     input_image = 'images/kodak24.png'  # Provide the path to your input image here
-    quality_factor = 10  # JPEG quality factor
+    quality_factor = 40  # JPEG quality factor
     output_file = 'encoded_image.txt'  # File to store the encoded data
 
     # Perform encoding
@@ -26,8 +26,17 @@ def main():
     print("Encoding done")
     print("Decoding started")
 
-    # # Perform decoding
-    decoder(output_file, quality_factor, QM)
+    # Perform decoding
+    from PIL import Image
+
+    reconstructed_img = decoder(output_file, quality_factor, QM)
+
+    print("Decoding done")
+    
+    # Save the reconstructed image on grayscale
+    #filename should have input_image name with quality factor
+    reconstructed_img = Image.fromarray(reconstructed_img)
+    reconstructed_img.save(f'{input_image.split('/')[1].split('.')[0]}_{quality_factor}.png')
 
 if __name__ == "__main__":
     main()

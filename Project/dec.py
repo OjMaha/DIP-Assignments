@@ -202,11 +202,6 @@ def decoder(encoded_file, quality_factor, Q):
             compressed_image[i:i+8, j:j+8] = quantized_block
             patch_number += 1
 
-            if(patch_number == 1):
-                print("First patch: ", quantized_block)
-
-    print("Patches regenerated")
-
     # Perform dequantization and inverse DCT
     decompressed_image = np.zeros_like(compressed_image)
     for i in range(0, compressed_image.shape[0], 8):
@@ -225,9 +220,5 @@ def decoder(encoded_file, quality_factor, Q):
 
     print("Decompression done")
 
-    # Display the reconstructed image
-    plt.imshow(decompressed_image, cmap='gray')
-    plt.title('Reconstructed Image')
-    plt.axis('off')
-    plt.show()
+    return decompressed_image
 
