@@ -11,10 +11,10 @@ def main():
     encoder(input_image, quality_factor, output_file)
 
     print("Encoding done")
-    print("Decoding started")
+    # print("Decoding started")
 
-    # Perform decoding
-    decoder(output_file, quality_factor)
+    # # Perform decoding
+    # decoder(output_file, quality_factor)
 
 if __name__ == "__main__":
     main()

@@ -20,21 +20,25 @@ def zigzag_transform(block):
     ]).flatten()
     return block.flatten()[idx]
 
-def run_length_encode(data):
-    rle = []
-    count = 1
-    prev = data[0]
-    for i in range(1, len(data)):
-        if data[i] == prev and count < 255:
-            count += 1
-        else:
-            rle.extend([prev, count])
-            prev = data[i]
-            count = 1
-    rle.extend([prev, count])
-    return rle
+def run_length_encode(data, huffman_table):
+    encoded_data = []
+    zero_count = 0
 
-def huffman_encode(symbols, frequencies):
+    for coeff in data:
+        if coeff == 0:
+            zero_count += 1
+        else:
+            huffman_code = huffman_table[coeff]
+            encoded_data.append((huffman_code, zero_count))
+            zero_count = 0
+
+    return encoded_data
+    
+def huffman_encode(symbols, frequencies, exclude_zeros=False):
+    if exclude_zeros:
+        symbols = [sym for sym in symbols if sym != 0]
+        frequencies = [freq for sym, freq in zip(symbols, frequencies) if sym != 0]
+    
     heap = [[freq, [sym, ""]] for sym, freq in zip(symbols, frequencies)]
     while len(heap) > 1:
         lo = heappop(heap)
@@ -61,7 +65,7 @@ def encoder(image_path, quality_factor, output_file):
     plt.imshow(image, cmap='gray')
     plt.title('Original Image')
     plt.axis('off')  # Hide axes
-    plt.show()
+    # plt.show()
 
     image = image.astype(np.float64)
 
@@ -124,65 +128,23 @@ def encoder(image_path, quality_factor, output_file):
 
             # Store AC coefficients
             AC_coefficients.extend(ac_values)
-            
-    # Perform Run-Length Encoding (RLE) on AC coefficients
-    AC_rle = run_length_encode(AC_coefficients)
     
     # Huffman encoding for DC differences
     unique_dc, counts_dc = np.unique(DC_differences, return_counts=True)
     dc_huffman_codes = huffman_encode(unique_dc, counts_dc)
 
     # Huffman encoding for AC coefficients
-    unique_ac, counts_ac = np.unique(AC_rle, return_counts=True)
-    ac_huffman_codes = huffman_encode(unique_ac, counts_ac)
-
-    # Encode DC and AC data using their respective Huffman codes
-    encoded_dc = encode_data(DC_differences, dc_huffman_codes)
-    encoded_ac = encode_data(AC_rle, ac_huffman_codes)
-
-
-    # Perform zigzag transformation and RLE on the quantized blocks
-    # rle_data = []
-    # for i in range(0, height, 8):
-    #     for j in range(0, width, 8):
-    #         block = compressed_image[i:i+8, j:j+8]
-    #         zigzag_coeffs = zigzag_transform(block)
-    #         rle_data.extend(run_length_encode(zigzag_coeffs))
-
-    # # Huffman encoding
-    # unique_symbols, counts = np.unique(rle_data, return_counts=True)
-    # huffman_codes = huffman_encode(unique_symbols, counts)
-    # encoded_data = encode_data(rle_data, huffman_codes)
-
-    # #print huufman table
-    # print("Huffman Codes:")
-    # for symbol, code in huffman_codes.items():
-    #     print(f"{symbol}: {code}")
-    
-    # Huffman encoding for DC differences
-    
-    # Huffman encoding for DC differences
-    
-    unique_dc, counts_dc = np.unique(DC_differences, return_counts=True)
-    dc_huffman_codes = huffman_encode(unique_dc, counts_dc)
+    unique_ac, counts_ac = np.unique(AC_coefficients, return_counts=True)
+    ac_huffman_codes = huffman_encode(unique_ac, counts_ac, True)
 
     # Debug print for DC Huffman codes
     print("DC Huffman Codes:")
     for symbol, code in dc_huffman_codes.items():
         print(f"{symbol}: {code}")
 
-    # Huffman encoding for AC coefficients
-    unique_ac, counts_ac = np.unique(AC_rle, return_counts=True)
-    ac_huffman_codes = huffman_encode(unique_ac, counts_ac)
-
-    # Debug print for AC Huffman codes
     print("AC Huffman Codes:")
     for symbol, code in ac_huffman_codes.items():
         print(f"{symbol}: {code}")
-
-    # Encode DC and AC data using their respective Huffman codes
-    encoded_dc = encode_data(DC_differences, dc_huffman_codes)
-    encoded_ac = encode_data(AC_rle, ac_huffman_codes)
 
     # Save metadata and encoded data to a .txt file
     with open(output_file, 'w') as f:
@@ -199,29 +161,6 @@ def encoder(image_path, quality_factor, output_file):
         f.write("AC Huffman Codes:\n")
         for symbol, code in ac_huffman_codes.items():
             f.write(f"{symbol}: {code}\n")
-        
-        # Write encoded data
-        f.write("Encoded DC Data:\n")
-        f.write(encoded_dc + "\n")
-        f.write("Encoded AC Data:\n")
-        f.write(encoded_ac)
 
     print(f"Encoded data and metadata saved to {output_file}")
-
-    # Save metadata and encoded data to a .txt file
-    # with open(output_file, 'w') as f:
-    #     # Write metadata
-    #     f.write(f"Original Dimensions: {original_height}x{original_width}\n")
-    #     f.write(f"Quality Factor: {quality_factor}\n")
-        
-    #     # Write Huffman codes
-    #     f.write("Huffman Codes:\n")
-    #     for symbol, code in huffman_codes.items():
-    #         f.write(f"{symbol}: {code}\n")
-        
-    #     # Write encoded data
-    #     f.write("Encoded Data:\n")
-    #     f.write(encoded_data)
-
-    # print(f"Encoded data and metadata saved to {output_file}")
 
