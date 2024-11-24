@@ -17,7 +17,7 @@ QM = np.array([
 def main():
     # Specify the input image
     input_image = 'images/flower.png'  # Provide the path to your input image here
-    quality_factor = 100  # JPEG quality factor
+    quality_factor = 10  # JPEG quality factor
     Y_file = 'Y.txt' 
     Cb_file = 'Cb.txt'
     Cr_file = 'Cr.txt'
